@@ -41,7 +41,8 @@ let package = Package(
             dependencies: [
                 "SpotBit",
                 .product(name: "Tor", package: "BCSwiftTor"),
-                "WolfBase"
+                "WolfBase",
+                "WolfAPI"
             ]),
     ]
 )

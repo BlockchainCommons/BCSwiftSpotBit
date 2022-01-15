@@ -4,100 +4,55 @@ import WolfAPI
 public class SpotBitAPI: API<NoAuthorization> {
     public static let defaultHost = "h6zwwkcivy2hjys6xpinlnz2f74dsmvltzsd4xb42vinhlcaoe7fdeqd.onion"
     
-    public var useMockData: Bool = false
-    
     public init(host: String? = nil, session: URLSession) {
         let endpoint = Endpoint(scheme: .http, host: host ?? Self.defaultHost)
         super.init(endpoint: endpoint, session: session)
     }
     
-    public var isServerRunning: Bool {
-        get async {
-            func mock() -> Mock? {
-                guard useMockData else {
-                    return nil
-                }
-                return Mock(string: "server is running")
-            }
-
-            do {
-                let result = try await call(
-                    returning: String.self,
-                    method: .get,
-                    path: ["status"],
-                    mock: mock()
-                )
-                return result == "server is running"
-            } catch {
-                return false
-            }
-        }
+    public func isServerRunning(mock: Mock? = nil) async throws -> Bool {
+        let result = try await call(
+            returning: String.self,
+            method: .get,
+            path: ["status"],
+            mock: mock
+        )
+        return result == "server is running"
     }
     
-    public var configuration: SpotBitConfiguration {
-        get async throws {
-            func mock() -> Mock? {
-                guard useMockData else {
-                    return nil
-                }
-                let s = #"{"cached exchanges":["gemini","bitstamp","okcoin","coinbasepro","kraken","bitfinex","bitflyer","liquid","coincheck","bitbank","zaif","hitbtc","binance","okex","gateio","bitmax"],"currencies":["USD","GBP","JPY","USDT","EUR"],"interval":10,"keepWeeks":3,"on demand exchanges":["acx","aofex","bequant","bibox","bigone","binance","bitbank","bitbay","bitfinex","bitflyer","bitforex","bithumb","bitkk","bitmax","bitstamp","bittrex","bitz","bl3p","bleutrade","braziliex","btcalpha","btcbox","btcmarkets","btctradeua","bw","bybit","bytetrade","cex","chilebit","coinbase","coinbasepro","coincheck","coinegg","coinex","coinfalcon","coinfloor","coinmate","coinone","crex24","currencycom","digifinex","dsx","eterbase","exmo","exx","foxbit","ftx","gateio","gemini","hbtc","hitbtc","hollaex","huobipro","ice3x","independentreserve","indodax","itbit","kraken","kucoin","lakebtc","latoken","lbank","liquid","livecoin","luno","lykke","mercado","oceanex","okcoin","okex","paymium","poloniex","probit","southxchange","stex","surbitcoin","therock","tidebit","tidex","upbit","vbtc","wavesexchange","whitebit","yobit","zaif","zb"],"updated settings?":"no"}"#
-                return Mock(string: s)
-            }
-            return try await call(
-                returning: SpotBitConfiguration.self,
-                method: .get,
-                path: ["configure"],
-                mock: mock()
-            )
-        }
+    public func configuration(mock: Mock? = nil) async throws -> SpotBitConfiguration {
+        return try await call(
+            returning: SpotBitConfiguration.self,
+            method: .get,
+            path: ["configure"],
+            mock: mock
+        )
     }
     
-    public func currentPrice(currency: String) async throws -> SpotBitPrice {
-        func mock() -> Mock? {
-            guard useMockData else {
-                return nil
-            }
-            let s = #"{"close":10320.4375,"currency_pair":"BTC-USD","datetime":"Sun, 13 Sep 2020 14:39:11 GMT","exchanges":["coinbasepro","hitbtc","bitfinex","kraken","bitstamp"],"failed_exchanges":["hitbtc"],"high":10321.0875,"id":"average_value","low":10319.3175,"oldest_timestamp":1600007460000,"open":10320.0875,"timestamp":1600007951358.4841,"volume":2.3988248000000003}"#
-            return Mock(string: s)
-        }
+    public func currentAveragePrice(currency: String, mock: Mock? = nil) async throws -> SpotBitPrice {
         return try await call(
             returning: SpotBitPrice.self,
             method: .get,
             path: ["now", currency],
-            mock: mock()
+            mock: mock
         )
     }
     
-    public func currentPrice(currency: String, exchange: String) async throws -> SpotBitPrice {
-        func mock() -> Mock? {
-            guard useMockData else {
-                return nil
-            }
-            let s = #"{"close":10314.06,"currency_pair":"BTC-USD","datetime":"2020-09-13 14:31:00","high":10315.65,"id":122983,"low":10314.06,"open":10315.65,"timestamp":1600007460000,"vol":3.53308926}"#
-            return Mock(string: s)
-        }
+    public func currentExchangePrice(currency: String, exchange: String, mock: Mock? = nil) async throws -> SpotBitPrice {
         return try await call(
             returning: SpotBitPrice.self,
             method: .get,
             path: ["now", currency, exchange],
-            mock: mock()
+            mock: mock
         )
     }
 
-    public func historicalPrices(currency: String, exchange: String, startDate: Date, endDate: Date) async throws -> SpotBitHistoricalPrices {
-        func mock() -> Mock? {
-            guard useMockData else {
-                return nil
-            }
-            let s = #"{"columns":["id","timestamp","datetime","currency_pair","open","high","low","close","vol"],"data":[[718,1600804380000,"2020-09-22 12:53:00","BTC-USD",10479.3,10483.3,10479.2,10483.3,17.4109874],[719,1600804440000,"2020-09-22 12:54:00","BTC-USD",10483.3,10483.4,10483.3,10483.4,0.098285],[720,1600804500000,"2020-09-22 12:55:00","BTC-USD",10483.4,10483.4,10483.4,10483.4,0.0]]}"#
-            return Mock(string: s)
-        }
+    public func historicalPrices(currency: String, exchange: String, startDate: Date, endDate: Date, mock: Mock? = nil) async throws -> SpotBitHistoricalPrices {
         return try await call(
             returning: SpotBitHistoricalPrices.self,
             method: .get,
             path: ["hist", currency, exchange, startDate.millisSince1970, endDate.millisSince1970],
-            mock: mock()
-            )
+            mock: mock
+        )
     }
 }
 
