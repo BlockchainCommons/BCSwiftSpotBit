@@ -1,5 +1,6 @@
 import Foundation
 import WolfAPI
+import WolfBase
 
 public class SpotBitAPI: API<NoAuthorization> {
     public static let defaultHost = "h6zwwkcivy2hjys6xpinlnz2f74dsmvltzsd4xb42vinhlcaoe7fdeqd.onion"
@@ -46,11 +47,11 @@ public class SpotBitAPI: API<NoAuthorization> {
         )
     }
 
-    public func historicalPrices(currency: String, exchange: String, startDate: Date, endDate: Date, mock: Mock? = nil) async throws -> SpotBitHistoricalPrices {
+    public func historicalPrices(currency: String, exchange: String, timeSpan: TimeSpan, mock: Mock? = nil) async throws -> SpotBitHistoricalPrices {
         return try await call(
             returning: SpotBitHistoricalPrices.self,
             method: .get,
-            path: ["hist", currency, exchange, startDate.millisSince1970, endDate.millisSince1970],
+            path: ["hist", currency, exchange, timeSpan.start.millisSince1970, timeSpan.end.millisSince1970],
             mock: mock
         )
     }

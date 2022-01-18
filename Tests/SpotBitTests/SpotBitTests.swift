@@ -70,7 +70,15 @@ final class SpotBitTests: XCTestCase {
             let s = #"{"columns":["id","timestamp","datetime","currency_pair","open","high","low","close","vol"],"data":[[718,1600804380000,"2020-09-22 12:53:00","BTC-USD",10479.3,10483.3,10479.2,10483.3,17.4109874],[719,1600804440000,"2020-09-22 12:54:00","BTC-USD",10483.3,10483.4,10483.3,10483.4,0.098285],[720,1600804500000,"2020-09-22 12:55:00","BTC-USD",10483.4,10483.4,10483.4,10483.4,0.0]]}"#
             return Mock(string: s)
         }
-        let result = try await api.historicalPrices(currency: "USD", exchange: "kraken", startDate: Date(timeIntervalSince1970: 160080438), endDate: Date(timeIntervalSince1970: 160080450), mock: mock())
+        let result = try await api.historicalPrices(
+            currency: "USD",
+            exchange: "kraken",
+            timeSpan: TimeSpan(
+            Date(timeIntervalSince1970: 160080438) ..<
+            Date(timeIntervalSince1970: 160080450)
+            ),
+            mock: mock()
+        )
         XCTAssertTrue(!result.prices.isEmpty)
         XCTAssertEqual(result.prices[0].currencyPair, "BTC-USD")
     }
