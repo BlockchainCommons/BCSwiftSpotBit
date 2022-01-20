@@ -136,7 +136,7 @@ public struct SpotBitPrice: Decodable {
         case volume = "volume"
     }
 
-    public static func mockPrice(currency: String, closeDate: Date) -> SpotBitPrice {
+    public static func mockHistoricalPrice(currency: String, closeDate: Date) -> SpotBitPrice {
         let currencyPair = "BTC-\(currency)"
         let low = Double.random(in: 100...50000)
         let high = low + Double.random(in: 100...50000)
@@ -146,9 +146,29 @@ public struct SpotBitPrice: Decodable {
         return SpotBitPrice(currencyPair: currencyPair, close: close, closeDate: closeDate, openDate: nil, open: open, high: high, low: low, volume: volume, exchanges: nil, failedExchanges: nil)
     }
     
-    public func compactEncoding(id: Int = 0) -> String {
+    public func encodeMockHistoricalPrice(id: Int = 0) -> String {
         let components: [Any] = [id, closeDate.millisSince1970, closeDate.description.flanked("\""), currencyPair.flanked("\""), open!, high!, low!, close, volume!]
         return components.map( { "\($0)" } ).joined(separator: ",").flanked("[", "]")
+    }
+
+    public static func mockPriceForCurrency(_ currency: String) -> SpotBitPrice {
+        let currencyPair = "BTC-\(currency)"
+        let low = Double.random(in: 100...50000)
+        let high = low + Double.random(in: 100...50000)
+        let open = Double.random(in: low...high)
+        let close = Double.random(in: low...high)
+        let closeDate = Date()
+        let openDate = closeDate.addingTimeInterval(-10 * 60)
+        let volume = Double.random(in: 0...10)
+        let exchanges = ["coinbasepro", "hitbtc", "bitfinex", "kraken", "bitstamp"]
+        let failedExchanges = ["hitbtc"]
+        return SpotBitPrice(currencyPair: currencyPair, close: close, closeDate: closeDate, openDate: openDate, open: open, high: high, low: low, volume: volume, exchanges: exchanges, failedExchanges: failedExchanges)
+    }
+    
+    public func encodeMockPriceForCurrency() -> String {
+        """
+            {"close":\(close),"currency_pair":"\(currencyPair)","datetime":"\(closeDate.description)","exchanges":\(exchanges!.description),"failed_exchanges":\(failedExchanges!.description),"high":\(high!),"id":"average_value","low":\(low!),"oldest_timestamp":\(openDate!.millisSince1970),"open":\(open!),"timestamp":\(closeDate.millisSince1970),"volume":\(volume!)}
+        """
     }
 }
 
@@ -193,24 +213,24 @@ public struct SpotBitHistoricalPrices: Decodable {
         case data
     }
     
-    public func compactEncoding() -> String {
+    public static func mockHistoricalPrices(currency: String, timeSpan: TimeSpan, points: Int = 30) -> SpotBitHistoricalPrices {
+        let timeDivision = timeSpan.duration.seconds / Double(points - 1)
+        let prices: [SpotBitPrice] = (1...points).map { i in
+            let closeDate = timeSpan.start + (timeDivision * Double(i))
+            return SpotBitPrice.mockHistoricalPrice(currency: currency, closeDate: closeDate)
+        }
+        return SpotBitHistoricalPrices(prices: prices)
+    }
+    
+    public func encodeMockHistoricalPrices() -> String {
         let p: [String] = prices.enumerated().map {
             let (i, price) = $0
-            return price.compactEncoding(id: i)
+            return price.encodeMockHistoricalPrice(id: i)
         }
         let pricePoints = p.joined(separator: ",").flanked("[", "]")
         return """
             {"columns":["id","timestamp","datetime","currency_pair","open","high","low","close","vol"],"data":\(pricePoints)}
         """
-    }
-    
-    public static func mockPrices(currency: String, timeSpan: TimeSpan, points: Int = 30) -> SpotBitHistoricalPrices {
-        let timeDivision = timeSpan.duration.seconds / Double(points - 1)
-        let prices: [SpotBitPrice] = (1...points).map { i in
-            let closeDate = timeSpan.start + (timeDivision * Double(i))
-            return SpotBitPrice.mockPrice(currency: currency, closeDate: closeDate)
-        }
-        return SpotBitHistoricalPrices(prices: prices)
     }
 }
 
@@ -245,5 +265,9 @@ public struct SpotBitConfiguration: Decodable {
         case intervalSeconds = "interval"
         case keepWeeks = "keepWeeks"
         case isUpdatedSettings = "updated settings?"
+    }
+    
+    public static func mockConfiguration() -> String {
+        #"{"cached exchanges":["gemini","bitstamp","okcoin","coinbasepro","kraken","bitfinex","bitflyer","liquid","coincheck","bitbank","zaif","hitbtc","binance","okex","gateio","bitmax"],"currencies":["USD","GBP","JPY","USDT","EUR"],"interval":10,"keepWeeks":3,"on demand exchanges":["acx","aofex","bequant","bibox","bigone","binance","bitbank","bitbay","bitfinex","bitflyer","bitforex","bithumb","bitkk","bitmax","bitstamp","bittrex","bitz","bl3p","bleutrade","braziliex","btcalpha","btcbox","btcmarkets","btctradeua","bw","bybit","bytetrade","cex","chilebit","coinbase","coinbasepro","coincheck","coinegg","coinex","coinfalcon","coinfloor","coinmate","coinone","crex24","currencycom","digifinex","dsx","eterbase","exmo","exx","foxbit","ftx","gateio","gemini","hbtc","hitbtc","hollaex","huobipro","ice3x","independentreserve","indodax","itbit","kraken","kucoin","lakebtc","latoken","lbank","liquid","livecoin","luno","lykke","mercado","oceanex","okcoin","okex","paymium","poloniex","probit","southxchange","stex","surbitcoin","therock","tidebit","tidex","upbit","vbtc","wavesexchange","whitebit","yobit","zaif","zb"],"updated settings?":"no"}"#
     }
 }
