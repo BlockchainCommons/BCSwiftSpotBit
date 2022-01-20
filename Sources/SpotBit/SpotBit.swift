@@ -71,7 +71,7 @@ public struct SpotBitPrice: Decodable {
     public let exchanges: [String]?
     public let failedExchanges: [String]?
 
-    init(currencyPair: String, close: Double, closeDate: Date, openDate: Date?, open: Double?, high: Double?, low: Double?, volume: Double?, exchanges: [String]?, failedExchanges: [String]?) {
+    public init(currencyPair: String, close: Double, closeDate: Date, openDate: Date?, open: Double?, high: Double?, low: Double?, volume: Double?, exchanges: [String]?, failedExchanges: [String]?) {
         self.currencyPair = currencyPair
         self.close = close
         self.closeDate = closeDate
