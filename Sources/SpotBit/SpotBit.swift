@@ -57,11 +57,10 @@ public class SpotBitAPI: API<NoAuthorization> {
     }
 }
 
-public struct SpotBitPrice: Decodable {
+public struct SpotBitPrice: Decodable, Equatable {
     public let currencyPair: String
     public let close: Double
     public let closeDate: Date
-    //public let dateTime: String
     public let openDate: Date?
     public let open: Double?
     public let high: Double?
@@ -75,7 +74,6 @@ public struct SpotBitPrice: Decodable {
         self.currencyPair = currencyPair
         self.close = close
         self.closeDate = closeDate
-        //self.dateTime = closeDate.description
         self.openDate = openDate
         self.open = open
         self.high = high
@@ -172,7 +170,7 @@ public struct SpotBitPrice: Decodable {
     }
 }
 
-public struct SpotBitHistoricalPrices: Decodable {
+public struct SpotBitHistoricalPrices: Decodable, Equatable {
     public let prices: [SpotBitPrice]
     
     public init(prices: [SpotBitPrice]) {
