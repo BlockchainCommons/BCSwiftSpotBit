@@ -61,7 +61,7 @@ public struct SpotBitPrice: Decodable {
     public let currencyPair: String
     public let close: Double
     public let closeDate: Date
-
+    //public let dateTime: String
     public let openDate: Date?
     public let open: Double?
     public let high: Double?
@@ -75,6 +75,7 @@ public struct SpotBitPrice: Decodable {
         self.currencyPair = currencyPair
         self.close = close
         self.closeDate = closeDate
+        //self.dateTime = closeDate.description
         self.openDate = openDate
         self.open = open
         self.high = high
@@ -91,6 +92,7 @@ public struct SpotBitPrice: Decodable {
         self.close = try container.decode(Double.self, forKey: .close)
         let closeMillis = try container.decode(Double.self, forKey: .timestamp)
         self.closeDate = Date(millisSince1970: closeMillis)
+        //self.dateTime = try container.decode(String.self, forKey: .dateTime)
 
         if let openMillis = try container.decodeIfPresent(Double.self, forKey: .oldestTimestamp) {
             self.openDate = Date(millisSince1970: openMillis)
@@ -122,11 +124,10 @@ public struct SpotBitPrice: Decodable {
     enum CodingKeys: String, CodingKey {
         case close = "close"
         case currencyPair = "currency_pair"
-        case dateTime = "datetime"
+        //case dateTime = "datetime"
         case exchanges = "exchanges"
         case failedExchanges = "failed_exchanges"
         case high = "high"
-        case id = "id"
         case low = "low"
         case oldestTimestamp = "oldest_timestamp"
         case open = "open"
@@ -134,10 +135,29 @@ public struct SpotBitPrice: Decodable {
         case vol = "vol"
         case volume = "volume"
     }
+
+    public static func mockPrice(currency: String, closeDate: Date) -> SpotBitPrice {
+        let currencyPair = "BTC-\(currency)"
+        let low = Double.random(in: 100...50000)
+        let high = low + Double.random(in: 100...50000)
+        let open = Double.random(in: low...high)
+        let close = Double.random(in: low...high)
+        let volume = Double.random(in: 0...10)
+        return SpotBitPrice(currencyPair: currencyPair, close: close, closeDate: closeDate, openDate: nil, open: open, high: high, low: low, volume: volume, exchanges: nil, failedExchanges: nil)
+    }
+    
+    public func compactEncoding(id: Int = 0) -> String {
+        let components: [Any] = [id, closeDate.millisSince1970, closeDate.description.flanked("\""), currencyPair.flanked("\""), open!, high!, low!, close, volume!]
+        return components.map( { "\($0)" } ).joined(separator: ",").flanked("[", "]")
+    }
 }
 
 public struct SpotBitHistoricalPrices: Decodable {
     public let prices: [SpotBitPrice]
+    
+    public init(prices: [SpotBitPrice]) {
+        self.prices = prices
+    }
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -153,10 +173,10 @@ public struct SpotBitHistoricalPrices: Decodable {
         
         init(from decoder: Decoder) throws {
             var container = try decoder.unkeyedContainer()
-            let /*id*/ _ = try container.decode(Int.self)
+            /*let id*/ _ = try container.decode(Int.self)
             let timestampMillis = try container.decode(Double.self)
             let closeDate = Date(millisSince1970: timestampMillis)
-            let /*dateTime*/ _ = try container.decode(String.self)
+            /*let dateTime*/ _ = try container.decode(String.self)
             let currencyPair = try container.decode(String.self)
             let open = try container.decode(Double.self)
             let high = try container.decode(Double.self)
@@ -171,6 +191,26 @@ public struct SpotBitHistoricalPrices: Decodable {
     enum CodingKeys: String, CodingKey {
         case columns
         case data
+    }
+    
+    public func compactEncoding() -> String {
+        let p: [String] = prices.enumerated().map {
+            let (i, price) = $0
+            return price.compactEncoding(id: i)
+        }
+        let pricePoints = p.joined(separator: ",").flanked("[", "]")
+        return """
+            {"columns":["id","timestamp","datetime","currency_pair","open","high","low","close","vol"],"data":\(pricePoints)}
+        """
+    }
+    
+    public static func mockPrices(currency: String, timeSpan: TimeSpan, points: Int = 30) -> SpotBitHistoricalPrices {
+        let timeDivision = timeSpan.duration.seconds / Double(points - 1)
+        let prices: [SpotBitPrice] = (1...points).map { i in
+            let closeDate = timeSpan.start + (timeDivision * Double(i))
+            return SpotBitPrice.mockPrice(currency: currency, closeDate: closeDate)
+        }
+        return SpotBitHistoricalPrices(prices: prices)
     }
 }
 
