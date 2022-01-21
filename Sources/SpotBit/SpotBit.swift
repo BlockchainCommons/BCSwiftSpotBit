@@ -47,11 +47,11 @@ public class SpotBitAPI: API<NoAuthorization> {
         )
     }
 
-    public func historicalPrices(currency: String, exchange: String, timeSpan: TimeSpan, mock: Mock? = nil) async throws -> SpotBitHistoricalPrices {
+    public func historicalPrices(currency: String, exchange: String, timeSpan: Range<Date>, mock: Mock? = nil) async throws -> SpotBitHistoricalPrices {
         return try await call(
             returning: SpotBitHistoricalPrices.self,
             method: .get,
-            path: ["hist", currency, exchange, timeSpan.start.millisSince1970, timeSpan.end.millisSince1970],
+            path: ["hist", currency, exchange, timeSpan.lowerBound.millisSince1970, timeSpan.upperBound.millisSince1970],
             mock: mock
         )
     }
@@ -211,10 +211,10 @@ public struct SpotBitHistoricalPrices: Decodable, Equatable {
         case data
     }
     
-    public static func mockHistoricalPrices(currency: String, timeSpan: TimeSpan, points: Int = 30) -> SpotBitHistoricalPrices {
-        let timeDivision = timeSpan.duration.seconds / Double(points - 1)
+    public static func mockHistoricalPrices(currency: String, timeSpan: Range<Date>, points: Int = 30) -> SpotBitHistoricalPrices {
+        let timeDivision = timeSpan.duration / Double(points - 1)
         let prices: [SpotBitPrice] = (1...points).map { i in
-            let closeDate = timeSpan.start + (timeDivision * Double(i))
+            let closeDate = timeSpan.lowerBound + (timeDivision * Double(i))
             return SpotBitPrice.mockHistoricalPrice(currency: currency, closeDate: closeDate)
         }
         return SpotBitHistoricalPrices(prices: prices)

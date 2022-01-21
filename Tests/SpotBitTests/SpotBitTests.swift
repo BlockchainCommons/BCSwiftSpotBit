@@ -73,10 +73,7 @@ final class SpotBitTests: XCTestCase {
         let result = try await api.historicalPrices(
             currency: "USD",
             exchange: "kraken",
-            timeSpan: TimeSpan(
-            Date(timeIntervalSince1970: 160080438) ..<
-            Date(timeIntervalSince1970: 160080450)
-            ),
+            timeSpan: Date(timeIntervalSince1970: 160080438) ..< Date(timeIntervalSince1970: 160080450),
             mock: mock()
         )
         XCTAssertTrue(!result.prices.isEmpty)
