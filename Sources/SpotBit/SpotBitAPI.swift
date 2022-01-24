@@ -49,7 +49,7 @@ public class SpotBitAPI: API {
         return Candle(end: price.closeDate, close: price.close)!
     }
 
-    public func historicalPrices(currency: String, exchange: String, timeSpan: ClosedRange<Date>, mock: Mock? = nil) async throws -> [Candle] {
+    public func historicalPrices(currency: String, exchange: String, timeSpan: Range<Date>, mock: Mock? = nil) async throws -> [Candle] {
         let data = try await call(
             method: .get,
             path: ["hist", currency, exchange, Int(timeSpan.lowerBound.millisSince1970), Int(timeSpan.upperBound.millisSince1970)],

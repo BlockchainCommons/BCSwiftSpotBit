@@ -9,8 +9,8 @@ import Foundation
 import WolfBase
 
 public struct Candle {
-    public let startEnd: ClosedRange<Date>
-    public let lowHigh: ClosedRange<Double>
+    public let startEnd: Range<Date>
+    public let lowHigh: Range<Double>
     public let openClose: Interval<Double>
     public let volume: Double
     
@@ -21,7 +21,7 @@ public struct Candle {
     public var open: Double { openClose.a }
     public var close: Double { openClose.b }
 
-    public init(startEnd: ClosedRange<Date>, lowHigh: ClosedRange<Double>, openClose: Interval<Double>, volume: Double) {
+    public init(startEnd: Range<Date>, lowHigh: Range<Double>, openClose: Interval<Double>, volume: Double) {
         self.startEnd = startEnd
         self.lowHigh = lowHigh
         self.openClose = openClose
@@ -44,7 +44,7 @@ public struct Candle {
             return nil
         }
         
-        self.init(startEnd: start...end, lowHigh: low...high, openClose: open..close, volume: volume)
+        self.init(startEnd: start..<end, lowHigh: low..<high, openClose: open..close, volume: volume)
     }
     
     public func combined(with other: Candle) -> Candle {
@@ -58,7 +58,7 @@ public struct Candle {
         let open = self.start < other.start ? self.open : other.open
         let close = self.end > other.end ? self.close : other.close
         let volume = self.volume + other.volume
-        return Candle(startEnd: start...end, lowHigh: low...high, openClose: open..close, volume: volume)
+        return Candle(startEnd: start..<end, lowHigh: low..<high, openClose: open..close, volume: volume)
     }
     
     public static func combine(_ candles: Set<Candle>) -> Candle? {

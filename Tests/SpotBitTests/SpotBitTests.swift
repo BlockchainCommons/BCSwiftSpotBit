@@ -83,8 +83,8 @@ final class SpotBitTests: XCTestCase {
             let s = #"{"columns":["id","timestamp","datetime","currency_pair","open","high","low","close","vol"],"data":[[718,1600804380000,"2020-09-22 12:53:00","BTC-USD",10479.3,10483.3,10479.2,10483.3,17.4109874],[719,1600804440000,"2020-09-22 12:54:00","BTC-USD",10483.3,10483.4,10483.3,10483.4,0.098285],[720,1600804500000,"2020-09-22 12:55:00","BTC-USD",10483.4,10483.4,10483.4,10483.4,0.0]]}"#
             return Mock(string: s)
         }
-        //let timeSpan = Date(year: 2021, month: 12, day: 1) ... 31 * .days
-        let timeSpan = (Date(year: 2022, month: 1, day: 1) ... 4 * .minutes).upperBound ... (10 * .minutes)
+        //let timeSpan = Date(year: 2021, month: 12, day: 1) ..< 31 * .days
+        let timeSpan = (Date(year: 2022, month: 1, day: 1) ..< 4 * .minutes).upperBound ..< (10 * .minutes)
         //print(timeSpan)
         //api.debugPrintRequests = true
         let candles = try await api.historicalPrices(
