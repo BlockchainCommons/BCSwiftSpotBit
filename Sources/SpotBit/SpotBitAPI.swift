@@ -2,7 +2,7 @@ import Foundation
 import WolfAPI
 import WolfBase
 
-public class SpotBitAPI: API<NoAuthorization> {
+public class SpotBitAPI: API {
     public static let defaultHost = "h6zwwkcivy2hjys6xpinlnz2f74dsmvltzsd4xb42vinhlcaoe7fdeqd.onion"
     
     public init(host: String? = nil, session: URLSession) {
@@ -21,7 +21,7 @@ public class SpotBitAPI: API<NoAuthorization> {
     }
     
     public func configuration(mock: Mock? = nil) async throws -> SpotBitConfiguration {
-        return try await call(
+        try await call(
             returning: SpotBitConfiguration.self,
             method: .get,
             path: ["configure"],
@@ -29,31 +29,36 @@ public class SpotBitAPI: API<NoAuthorization> {
         )
     }
     
-    public func currentAveragePrice(currency: String, mock: Mock? = nil) async throws -> SpotBitPrice {
-        return try await call(
-            returning: SpotBitPrice.self,
+    public func currentAveragePrice(currency: String, mock: Mock? = nil) async throws -> Candle {
+        let data = try await call(
             method: .get,
             path: ["now", currency],
             mock: mock
         )
+        let price = try JSONDecoder().decode(SpotBitPrice.self, from: data)
+        return Candle(end: price.closeDate, close: price.close)!
     }
     
-    public func currentExchangePrice(currency: String, exchange: String, mock: Mock? = nil) async throws -> SpotBitPrice {
-        return try await call(
-            returning: SpotBitPrice.self,
+    public func currentExchangePrice(currency: String, exchange: String, mock: Mock? = nil) async throws -> Candle {
+        let data = try await call(
             method: .get,
             path: ["now", currency, exchange],
             mock: mock
         )
+        let price = try JSONDecoder().decode(SpotBitPrice.self, from: data)
+        return Candle(end: price.closeDate, close: price.close)!
     }
 
-    public func historicalPrices(currency: String, exchange: String, timeSpan: Range<Date>, mock: Mock? = nil) async throws -> SpotBitHistoricalPrices {
-        return try await call(
-            returning: SpotBitHistoricalPrices.self,
+    public func historicalPrices(currency: String, exchange: String, timeSpan: ClosedRange<Date>, mock: Mock? = nil) async throws -> [Candle] {
+        let data = try await call(
             method: .get,
-            path: ["hist", currency, exchange, timeSpan.lowerBound.millisSince1970, timeSpan.upperBound.millisSince1970],
+            path: ["hist", currency, exchange, Int(timeSpan.lowerBound.millisSince1970), Int(timeSpan.upperBound.millisSince1970)],
             mock: mock
         )
+        let historicalPrices = try JSONDecoder().decode(SpotBitHistoricalPrices.self, from: data)
+        return historicalPrices.prices.compactMap { price in
+            Candle(start: price.openDate, end: price.closeDate, low: price.low, high: price.high, open: price.open, close: price.close, volume: price.volume ?? 0)
+        }
     }
 }
 
@@ -145,7 +150,7 @@ public struct SpotBitPrice: Decodable, Equatable {
     }
     
     public func encodeMockHistoricalPrice(id: Int = 0) -> String {
-        let components: [Any] = [id, closeDate.millisSince1970, closeDate.description.flanked("\""), currencyPair.flanked("\""), open!, high!, low!, close, volume!]
+        let components: [Any] = [id, Int(closeDate.millisSince1970), closeDate.description.quoted(), currencyPair.quoted(), open!, high!, low!, close, volume!]
         return components.map( { "\($0)" } ).joined(separator: ",").flanked("[", "]")
     }
 
@@ -165,7 +170,7 @@ public struct SpotBitPrice: Decodable, Equatable {
     
     public func encodeMockPriceForCurrency() -> String {
         """
-            {"close":\(close),"currency_pair":"\(currencyPair)","datetime":"\(closeDate.description)","exchanges":\(exchanges!.description),"failed_exchanges":\(failedExchanges!.description),"high":\(high!),"id":"average_value","low":\(low!),"oldest_timestamp":\(openDate!.millisSince1970),"open":\(open!),"timestamp":\(closeDate.millisSince1970),"volume":\(volume!)}
+            {"close":\(close),"currency_pair":"\(currencyPair)","datetime":"\(closeDate.description)","exchanges":\(exchanges!.description),"failed_exchanges":\(failedExchanges!.description),"high":\(high!),"id":"average_value","low":\(low!),"oldest_timestamp":\(Int(openDate!.millisSince1970)),"open":\(open!),"timestamp":\(Int(closeDate.millisSince1970)),"volume":\(volume!)}
         """
     }
 }

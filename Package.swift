@@ -21,7 +21,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/WolfMcNally/WolfAPI",
-            from: "0.0.0"
+            from: "1.0.0"
         ),
         .package(
             url: "https://github.com/BlockchainCommons/BCSwiftTor",
