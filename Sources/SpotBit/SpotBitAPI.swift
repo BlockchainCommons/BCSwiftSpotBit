@@ -35,8 +35,7 @@ public class SpotBitAPI: API {
             path: ["now", currency],
             mock: mock
         )
-        let price = try JSONDecoder().decode(SpotBitPrice.self, from: data)
-        return Candle(end: price.closeDate, close: price.close)!
+        return try JSONDecoder().decode(SpotBitPrice.self, from: data).candle
     }
     
     public func currentExchangePrice(currency: String, exchange: String, mock: Mock? = nil) async throws -> Candle {
@@ -45,8 +44,7 @@ public class SpotBitAPI: API {
             path: ["now", currency, exchange],
             mock: mock
         )
-        let price = try JSONDecoder().decode(SpotBitPrice.self, from: data)
-        return Candle(end: price.closeDate, close: price.close)!
+        return try JSONDecoder().decode(SpotBitPrice.self, from: data).candle
     }
 
     public func historicalPrices(currency: String, exchange: String, timeSpan: Range<Date>, mock: Mock? = nil) async throws -> [Candle] {
@@ -55,10 +53,7 @@ public class SpotBitAPI: API {
             path: ["hist", currency, exchange, Int(timeSpan.lowerBound.millisSince1970), Int(timeSpan.upperBound.millisSince1970)],
             mock: mock
         )
-        let historicalPrices = try JSONDecoder().decode(SpotBitHistoricalPrices.self, from: data)
-        return historicalPrices.prices.compactMap { price in
-            Candle(start: price.openDate, end: price.closeDate, low: price.low, high: price.high, open: price.open, close: price.close, volume: price.volume ?? 0)
-        }
+        return try JSONDecoder().decode(SpotBitHistoricalPrices.self, from: data).candles
     }
 }
 
@@ -122,6 +117,10 @@ public struct SpotBitPrice: Decodable, Equatable {
         } else {
             self.failedExchanges = nil
         }
+    }
+    
+    public var candle: Candle {
+        Candle(end: closeDate, close: close)!
     }
 
     enum CodingKeys: String, CodingKey {
@@ -189,6 +188,12 @@ public struct SpotBitHistoricalPrices: Decodable, Equatable {
             throw DecodingError.dataCorrupted(.init(codingPath: [CodingKeys.columns], debugDescription: "Mismatch of expected columns"))
         }
         self.prices = try container.decode([Price].self, forKey: .data).map({ $0.price })
+    }
+    
+    public var candles: [Candle] {
+        prices.compactMap { price in
+            Candle(start: price.openDate, end: price.closeDate, low: price.low, high: price.high, open: price.open, close: price.close, volume: price.volume ?? 0)
+        }
     }
     
     struct Price: Decodable {
